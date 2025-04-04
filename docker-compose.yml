@@ -1,0 +1,11 @@
+services:
+  app:
+    image: ubuntu:latest
+    container_name: robotserver_dev
+    ports:
+      - 23500:23500
+    volumes:
+      - ${LOCATION}/Server:/web
+    command: tail -f /dev/null
+    build:
+      dockerfile: Dockerfile
