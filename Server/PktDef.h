@@ -72,4 +72,29 @@ public:
         memcpy(&CmdPacket.CRC, RawBuffer, sizeof(char));
         RawBuffer += sizeof(char); // This should take us to the end of the buffer
     };
+
+    void SetCmd(CmdType cmd)
+    {
+        CmdPacket.header.Drive = 0;
+        CmdPacket.header.Status = 0;
+        CmdPacket.header.Sleep = 0;
+        CmdPacket.header.Ack = 0;
+        switch (cmd)
+        {
+        case DRIVE:
+            CmdPacket.header.Drive = 1;
+            CmdPacket.header.Ack = 1;
+            break;
+        case SLEEP:
+            CmdPacket.header.Sleep = 1;
+            CmdPacket.header.Ack = 1;
+            break;
+        case RESPONSE:
+            CmdPacket.header.Status = 1;
+            CmdPacket.header.Ack = 1;
+            break;
+        default:
+            break;
+        }
+    }
 };
