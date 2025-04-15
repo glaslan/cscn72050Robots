@@ -6,8 +6,6 @@
 using namespace std;
 using namespace crow;
 
-const int PORT_NUMBER 23500;
-
 void sendFile(response &res, string filename, string contentType)
 {
     ifstream in("../" + filename, ifstream::in);
@@ -46,30 +44,35 @@ int main()
 {
     crow::SimpleApp app;
 
+    const int PORT_NUMBER = 23500;
+
+    string roboIp = "0.0.0.0";
+    int roboPort = 0;
+
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-     { sendHtml(res, "index"); });
+    { sendHtml(res, "./public/index"); });
 
     CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)
     ([](const request &req, response &res, string ip, int port)
-     {
+    {
         
-      }
+    }
     );
 
     CROW_ROUTE(app, "/telecommand").methods(HTTPMethod::PUT)
-    ([](const request &req, response &res, string ip, int port)
-     {
+    ([](const request &req, response &res)
+    {
         
-      }
+    }
     );
 
     CROW_ROUTE(app, "/telecommand_request")
-    ([](const request &req, response &res, string ip, int port)
-     {
+    ([](const request &req, response &res)
+    {
         
-      }
+    }
     );
 
     app.port(PORT_NUMBER)

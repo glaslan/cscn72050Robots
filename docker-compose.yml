@@ -5,7 +5,7 @@ services:
     ports:
       - 23500:23500
     volumes:
-      - ${LOCATION}/Server:/web
+      - ${LOCATION}/:/web
     command: tail -f /dev/null
     build:
       dockerfile: Dockerfile
