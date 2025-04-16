@@ -15,5 +15,15 @@
         <input type="number" name="port" id="port"><br>
         <button type="submit">Connect</button>
     </form>
+
+    <form action="/telecommand" method="put">
+        <label for="command">Command:</label>
+        <input type="text" name="command" id="command"><br>
+        <label for="duration">Duration:</label>
+        <input type="number" name="duration" id="duration"><br>
+        <label for="speed">Speed:</label>
+        <input type="number" name="speed" id="speed"><br>
+        <button type="submit">Send</button>
+    </form>
 </body>
 </html>
