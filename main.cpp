@@ -2,9 +2,11 @@
 
 #include "crow_all.h"
 #include <iostream>
+#include "MySocket.h"
 
 using namespace std;
 using namespace crow;
+using namespace TermProject;
 
 void sendFile(response &res, string filename, string contentType)
 {
@@ -49,6 +51,9 @@ int main()
     string roboIp = "0.0.0.0";
     int roboPort = 0;
 
+
+
+
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
@@ -57,7 +62,7 @@ int main()
     CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)
     ([](const request &req, response &res, string ip, int port)
     {
-        
+        MySocket* socket = new MySocket(SERVER, ip, (unsigned int)port, UDP, (unsigned int)0);
     }
     );
 

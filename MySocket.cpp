@@ -1,5 +1,6 @@
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "MySocket.h"
+
+#define INVALID_SOCKET -1
 
 using namespace TermProject;
 
@@ -18,13 +19,6 @@ MySocket::MySocket(SocketType socketType, std::string ipAddress, unsigned int po
 
 	Buffer = new char[MaxSize];
 
-	// Windows Socket init
-	WSADATA wsaData;
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-		std::cout << "ERROR: Failed to initialize Winsock" << std::endl;
-		return;
-	}
-
 	SvrAddr.sin_family = AF_INET;
 	SvrAddr.sin_port = htons(Port);
 	SvrAddr.sin_addr.s_addr = inet_addr(ipAddress.c_str());
@@ -32,7 +26,7 @@ MySocket::MySocket(SocketType socketType, std::string ipAddress, unsigned int po
 	if (connectionType == TCP && socketType == SERVER) { // Server TCP
 		WelcomeSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-		if (bind(WelcomeSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr)) == SOCKET_ERROR) {
+		if (!(bind(WelcomeSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr)))) {
 			std::cout << "ERROR: Failed to bind TCP server socket" << std::endl;
 			return;
 		}
@@ -46,10 +40,7 @@ MySocket::MySocket(SocketType socketType, std::string ipAddress, unsigned int po
 		ConnectionSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 		if (socketType == SERVER) {
-			if (bind(ConnectionSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr)) == SOCKET_ERROR) {
-				std::cout << "ERROR: Failed to bind UDP server socket" << std::endl;
-				return;
-			}
+			bind(ConnectionSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr))
 		}
 	}
 
@@ -58,9 +49,8 @@ MySocket::MySocket(SocketType socketType, std::string ipAddress, unsigned int po
 TermProject::MySocket::~MySocket()
 {
 	delete[] Buffer;
-	closesocket(WelcomeSocket);
-	closesocket(ConnectionSocket);
-	WSACleanup();
+	close(WelcomeSocket);
+	close(ConnectionSocket);
 }
 
 void TermProject::MySocket::ConnectTCP()
@@ -92,7 +82,7 @@ void TermProject::MySocket::DisconnectTCP()
 		return;
 	}
 
-	closesocket(ConnectionSocket);
+	close(ConnectionSocket);
 	bTCPConnect = false;
 }
 

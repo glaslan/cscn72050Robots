@@ -1,8 +1,10 @@
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <winsock2.h>
-#include <ws2tcpip.h>
 #include <stdio.h> 
 #include <iostream>
+#include <cstring>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 
 #pragma once
 //#pragma warning(disable : 4996) // Use this if theres Deprecated warnings that the define won't fix
