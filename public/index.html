@@ -53,7 +53,7 @@
         <button type="submit">Send</button>
     </form>
     
-    
+    <button onclick="updateTelementry(event)">Request TelemeNtry</button>
 
     <h3>Response Log:</h3>
     <div id="responses"></div>
@@ -87,12 +87,23 @@
             });
         }
 
+        function updateTelementry(event) {
+            event.preventDefault();
+            fetch(`/telementry_request`, {
+                method: "GET"
+            })
+            .then(response => response.text())
+            .then(data => {
+                appendResponse(data);
+            });
+        }
         function appendResponse(text) {
             responses += text + "\n";
             const responseDiv = document.getElementById("responses");
             responseDiv.innerText = responses;
             responseDiv.scrollTop = responseDiv.scrollHeight;
         }
+
     </script>
 </body>
 </html>

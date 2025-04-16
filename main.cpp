@@ -56,18 +56,20 @@ int main()
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-     { sendHtml(res, "./public/index"); });
+    { sendHtml(res, "./public/index"); });
 
     CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket](const request &req, response &res, string ip, int port)
-                                                                         {
+        {
         roboIp = ip;
         roboPort = port;
 
-        roboSocket = new MySocket(CLIENT, ip, (unsigned int)port, UDP, (unsigned int)0); });
+        roboSocket = new MySocket(CLIENT, ip, (unsigned int)port, UDP, (unsigned int)0); 
+
+    });
 
     CROW_ROUTE(app, "/telecommand/<string>")
         .methods(HTTPMethod::PUT)([&roboSocket](const request &req, response &res, string cmd)
-                                  {
+        {
             if (cmd == "SLEEP") {
                 PktDef pkt;
                 pkt.SetCmd(CmdType::SLEEP);
@@ -78,8 +80,8 @@ int main()
             } 
             else {
                 bool isValid = req.url_params.get("direction") && 
-                               req.url_params.get("duration") &&
-                               req.url_params.get("speed");
+                                req.url_params.get("duration") &&
+                                req.url_params.get("speed");
         
                 if (!isValid) {
                     res.code = 400;
@@ -108,7 +110,7 @@ int main()
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
-     {
+    {
         PktDef sendPkt;
         sendPkt.SetCmd(CmdType::RESPONSE);
         sendPkt.CalcCRC();

@@ -4,6 +4,7 @@ services:
     container_name: robotserver_dev
     ports:
       - 23500:23500
+      - 5000:5000
     volumes:
       - ${LOCATION}/:/web
     command: tail -f /dev/null
