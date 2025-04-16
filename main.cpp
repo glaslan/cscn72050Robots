@@ -66,10 +66,10 @@ int main()
         roboSocket = new MySocket(CLIENT, roboIp, (unsigned int)roboPort, UDP, (unsigned int)0); 
         if (roboSocket) {
             res.code = 200;
-            res.write("Connected");
+            res.write("Bound Socket");
         } else {
             res.code = 500;
-            res.write("Failed to connect");
+            res.write("Failed to Bind Socket");
         }
         res.end();
     });
@@ -78,48 +78,45 @@ int main()
         .methods(HTTPMethod::PUT)([&roboSocket](const request &req, response &res, string cmd)
         {
             PktDef* telepkt = new PktDef();
+
             if (cmd == "SLEEP") {
                 telepkt->SetCmd(CmdType::SLEEP);
-                telepkt->CalcCRC();
-                char* packet = telepkt->GenPacket();
-                
-                roboSocket->SendData(packet, sizeof(packet));
-                cout << "Sent SLEEP packet that was " << sizeof(packet) << " bytes large" << endl;
-            } 
-            else {
-                bool isValid = req.url_params.get("direction") && 
-                                req.url_params.get("duration") &&
-                                req.url_params.get("speed");
+            } else {
+                const char* dir = req.url_params.get("direction");
+                const char* dur = req.url_params.get("duration");
+                const char* spd = req.url_params.get("speed");
         
-                if (!isValid) {
+                if (!(dir && dur && spd)) {
                     res.code = 400;
                     res.write("Missing parameters");
                     res.end();
                     return;
                 }
         
-                int direction = std::stoi(req.url_params.get("direction"));
-                int duration = std::stoi(req.url_params.get("duration"));
-                int speed = std::stoi(req.url_params.get("speed"));
+                char bodyData[3] = {
+                    static_cast<char>(std::stoi(dir)),
+                    static_cast<char>(std::stoi(dur)),
+                    static_cast<char>(std::stoi(spd))
+                };
         
-                char* bodyData = new char[direction, duration, speed];
-
                 telepkt->SetCmd(CmdType::DRIVE);
-                telepkt->SetBodyData(bodyData, sizeof(bodyData));
-                telepkt->CalcCRC();
-                char* packet = telepkt->GenPacket();
-        
-                roboSocket->SendData(packet, sizeof(packet));
-                cout << "Sent DRIVE packet that was " << sizeof(packet) << " bytes large" << endl;
+                telepkt->SetBodyData(bodyData, 3);
             }
-            char* data = new char[10];
+        
+            telepkt->CalcCRC();
+            char* packet = telepkt->GenPacket();
+            int len = telepkt->GetLength();
+            roboSocket->SendData(packet, len);
+        
+            cout << "Sent " << cmd << " packet that was " << len << " bytes large" << endl;
+        
+            char data[10];
             telepkt->SetLength(8);
-            cout << telepkt->GetLength() << endl;
             int length = roboSocket->GetData(data);
-            cout << data << endl;
-            cout << "Got " << length << " bytes" << endl;
+            cout << "Got " << length << " bytes: " << string(data, length) << endl;
+        
             delete telepkt;
-            res.end(); 
+            res.end();
             });
 
     CROW_ROUTE(app, "/telementry_request")
@@ -130,9 +127,9 @@ int main()
         sendPkt.CalcCRC();
         char* sendPacket = sendPkt.GenPacket();
 
-        roboSocket->SendData(sendPacket, sizeof(sendPacket));
+        roboSocket->SendData(sendPacket, sendPkt.GetLength());
 
-        char* buffer = nullptr;
+        char buffer[16];
         int bytesReceived = roboSocket->GetData(buffer);
 
         PktDef recvPkt(buffer);
@@ -141,9 +138,9 @@ int main()
         unsigned short int lastPacketCounter = recvBody[0];
         unsigned short int currentGrade = recvBody[4];
         unsigned short int hitCount = recvBody[8];
-        unsigned short int lastCmd = recvBody[12];
-        unsigned short int lastCmdValue = recvBody[13];
-        unsigned short int lastCmdSpeed = recvBody[13];
+        unsigned char lastCmd = recvBody[12];
+        unsigned char lastCmdValue = recvBody[13];
+        unsigned char lastCmdSpeed = recvBody[14];
     
         res.code = 200;
         res.end(); });

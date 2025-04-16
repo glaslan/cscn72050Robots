@@ -17,7 +17,7 @@ by you.
 #define HEADERSIZE 4
 #define CRCSIZE 1
 
-enum CmdType
+enum class CmdType
 {
     UNKNOWN,
     DRIVE,
@@ -86,6 +86,8 @@ public:
     data and populates the Header, Body, and CRC contents of the PktDef object
     */
     PktDef(char *src);
+
+    ~PktDef();
     // A set function that sets the packets command flag based on the CmdType
     void SetCmd(CmdType cmd);
     /*

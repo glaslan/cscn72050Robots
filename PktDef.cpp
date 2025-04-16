@@ -1,8 +1,6 @@
 #include "PktDef.h"
 #include <iostream>
 
-#include <iostream>
-
 PktDef::PktDef()
 {
     // Initilize base values
@@ -36,6 +34,13 @@ PktDef::PktDef(char *src) : PktDef()
     memcpy(&cmdPacket.crc, tmp, CRCSIZE);
 }
 
+PktDef::~PktDef() {
+    if (cmdPacket.data)
+        delete[] cmdPacket.data;
+    delete[] rawBuffer;
+}
+
+
 void PktDef::SetCmd(CmdType cmd)
 {
     // Start by setting Header values to 0
@@ -66,15 +71,9 @@ void PktDef::SetCmd(CmdType cmd)
 
 void PktDef::SetBodyData(char *dataBuffer, int size)
 {
-    char *tmp = dataBuffer;
-    tmp += HEADERSIZE;
-    int amtToCopy = (size - HEADERSIZE) - CRCSIZE;
-
-    cmdPacket.data = new char[amtToCopy];
-    memcpy(cmdPacket.data, tmp, amtToCopy);
-
-    cmdPacket.header.Length = size;
-    rawBuffer = dataBuffer;
+    cmdPacket.data = new char[size];
+    memcpy(cmdPacket.data, dataBuffer, size);
+    cmdPacket.header.Length = HEADERSIZE + size + CRCSIZE;
 }
 
 void PktDef::SetPktCount(int count)
@@ -145,7 +144,7 @@ DriveBody PktDef::GetDriveBody()
 
 bool PktDef::CheckCRC(char *buffer, int size)
 {
-    if (size < cmdPacket.header.Length)
+    if (size > cmdPacket.header.Length)
         return false; // Buffer size doesn't match up
 
     // Get count of all ones in buffer
@@ -177,12 +176,12 @@ void PktDef::CalcCRC()
     count += countBinaryOnes(db.Duration);
     count += countBinaryOnes(db.Speed);
 
-    cmdPacket.crc = count;
+    cmdPacket.crc = (unsigned char)count;
 }
 
 char *PktDef::GenPacket()
 {
-    size_t totalSize = HEADERSIZE + CRCSIZE;
+    size_t totalSize = cmdPacket.header.Length;
 
     char *buffer = new char[totalSize];
 
@@ -190,13 +189,13 @@ char *PktDef::GenPacket()
     memcpy(buffer, &cmdPacket.header, HEADERSIZE);
 
     // If data is valid, copy body data
-    if (cmdPacket.data && cmdPacket.header.Length > 0)
+    if (cmdPacket.data)
     {
-        memcpy(buffer + HEADERSIZE, cmdPacket.data, cmdPacket.header.Length);
+        memcpy(buffer + HEADERSIZE, cmdPacket.data, cmdPacket.header.Length - HEADERSIZE - CRCSIZE);
     }
 
     // Copy CRC to end of packet
-    memcpy(buffer + totalSize - CRCSIZE, &cmdPacket.crc, CRCSIZE);
+    memcpy(buffer + (totalSize - CRCSIZE), &cmdPacket.crc, CRCSIZE);
 
     return buffer;
 }
