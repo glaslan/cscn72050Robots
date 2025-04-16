@@ -124,6 +124,10 @@ char *PktDef::GetBodyData()
     return cmdPacket.data;
 }
 
+void PktDef::SetLength(int length) {
+    cmdPacket.header.Length = (unsigned char)length;
+}
+
 DriveBody PktDef::GetDriveBody()
 {
     // Initilize with base data incase cmdPacket.data is null

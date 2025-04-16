@@ -35,7 +35,7 @@ struct Header
     char Padding : 4;
     unsigned char Length;
 
-    Header() : PktCount(0), Drive(0), Status(0), Sleep(0), Ack(0), Padding(0), Length(0) {} // Default constructor
+    Header() : PktCount(0), Drive(0), Status(0), Sleep(0), Ack(0), Padding(0), Length(HEADERSIZE) {} // Default constructor
 
 }; // 4 bytes large
 
@@ -102,6 +102,7 @@ public:
     bool GetAck();
     // a query function that returns the packet Length in bytes
     int GetLength();
+    void SetLength(int);
     // a query function that returns a pointer to the objects Body field
     char *GetBodyData();
     // Converts char* data into the DriveBody struct to reference robot controls easier

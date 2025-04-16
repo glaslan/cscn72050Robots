@@ -63,20 +63,28 @@ int main()
         roboIp = ip;
         roboPort = port;
 
-        roboSocket = new MySocket(CLIENT, ip, (unsigned int)port, UDP, (unsigned int)0); 
-
+        roboSocket = new MySocket(CLIENT, roboIp, (unsigned int)roboPort, UDP, (unsigned int)0); 
+        if (roboSocket) {
+            res.code = 200;
+            res.write("Connected");
+        } else {
+            res.code = 500;
+            res.write("Failed to connect");
+        }
+        res.end();
     });
 
     CROW_ROUTE(app, "/telecommand/<string>")
         .methods(HTTPMethod::PUT)([&roboSocket](const request &req, response &res, string cmd)
         {
+            PktDef* telepkt = new PktDef();
             if (cmd == "SLEEP") {
-                PktDef pkt;
-                pkt.SetCmd(CmdType::SLEEP);
-                pkt.CalcCRC();
-                char* packet = pkt.GenPacket();
-        
+                telepkt->SetCmd(CmdType::SLEEP);
+                telepkt->CalcCRC();
+                char* packet = telepkt->GenPacket();
+                
                 roboSocket->SendData(packet, sizeof(packet));
+                cout << "Sent SLEEP packet that was " << sizeof(packet) << " bytes large" << endl;
             } 
             else {
                 bool isValid = req.url_params.get("direction") && 
@@ -96,17 +104,23 @@ int main()
         
                 char* bodyData = new char[direction, duration, speed];
 
-                PktDef pkt;
-                pkt.SetCmd(CmdType::DRIVE);
-                pkt.SetBodyData(bodyData, sizeof(bodyData));
-                pkt.CalcCRC();
-                char* packet = pkt.GenPacket();
+                telepkt->SetCmd(CmdType::DRIVE);
+                telepkt->SetBodyData(bodyData, sizeof(bodyData));
+                telepkt->CalcCRC();
+                char* packet = telepkt->GenPacket();
         
                 roboSocket->SendData(packet, sizeof(packet));
+                cout << "Sent DRIVE packet that was " << sizeof(packet) << " bytes large" << endl;
             }
-        
-            res.code = 200;
-            res.end(); });
+            char* data = new char[10];
+            telepkt->SetLength(8);
+            cout << telepkt->GetLength() << endl;
+            int length = roboSocket->GetData(data);
+            cout << data << endl;
+            cout << "Got " << length << " bytes" << endl;
+            delete telepkt;
+            res.end(); 
+            });
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
@@ -129,7 +143,7 @@ int main()
         unsigned short int hitCount = recvBody[8];
         unsigned short int lastCmd = recvBody[12];
         unsigned short int lastCmdValue = recvBody[13];
-        unsigned short int lastCmdSpeed = recvBody[14];
+        unsigned short int lastCmdSpeed = recvBody[13];
     
         res.code = 200;
         res.end(); });

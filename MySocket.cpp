@@ -89,8 +89,11 @@ void TermProject::MySocket::DisconnectTCP()
 
 void TermProject::MySocket::SendData(const char* data, int size)
 {
+	int result;
 	if (connectionType == TCP && bTCPConnect) send(ConnectionSocket, data, size, 0);
-	else if (connectionType == UDP) sendto(ConnectionSocket, data, size, 0, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr));
+	else if (connectionType == UDP) 
+		result = sendto(ConnectionSocket, data, size, 0, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr));
+	std::cout << result << std::endl;
 }
 
 int TermProject::MySocket::GetData(char* buffer)
