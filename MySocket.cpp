@@ -1,6 +1,7 @@
 #include "MySocket.h"
 
 #define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
 
 using namespace TermProject;
 
@@ -40,7 +41,7 @@ MySocket::MySocket(SocketType socketType, std::string ipAddress, unsigned int po
 		ConnectionSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 		if (socketType == SERVER) {
-			bind(ConnectionSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr))
+			bind(ConnectionSocket, (struct sockaddr*)&SvrAddr, sizeof(SvrAddr));
 		}
 	}
 
@@ -100,7 +101,7 @@ int TermProject::MySocket::GetData(char* buffer)
 		bytesWritten = recv(ConnectionSocket, Buffer, MaxSize, 0);
 	}
 	else if (connectionType == UDP) {
-		int addr_len = sizeof(SvrAddr);
+		socklen_t addr_len = sizeof(SvrAddr);
 		bytesWritten = recvfrom(ConnectionSocket, Buffer, MaxSize, 0, (struct sockaddr*)&SvrAddr, &addr_len);
 	}
 
