@@ -12,21 +12,23 @@ PktDef::PktDef()
     rawBuffer = nullptr;
 }
 
-PktDef::PktDef(char* src) : PktDef()
+PktDef::PktDef(char *src) : PktDef()
 {
     // Copy header
-    char* tmp = src;
+    char *tmp = src;
     memcpy(&cmdPacket.header, tmp, HEADERSIZE);
     tmp += HEADERSIZE;
 
     // Copy body
-    if ((int)cmdPacket.header.Length > (HEADERSIZE+CRCSIZE)) {
+    if ((int)cmdPacket.header.Length > (HEADERSIZE + CRCSIZE))
+    {
         int size = ((int)cmdPacket.header.Length - HEADERSIZE) - CRCSIZE;
         cmdPacket.data = new char[size];
         memcpy(cmdPacket.data, tmp, size);
         tmp += size;
     }
-    else {
+    else
+    {
         cmdPacket.data = nullptr;
     }
 
@@ -62,9 +64,9 @@ void PktDef::SetCmd(CmdType cmd)
     }
 }
 
-void PktDef::SetBodyData(char* dataBuffer, int size)
+void PktDef::SetBodyData(char *dataBuffer, int size)
 {
-    char* tmp = dataBuffer;
+    char *tmp = dataBuffer;
     tmp += HEADERSIZE;
     int amtToCopy = (size - HEADERSIZE) - CRCSIZE;
 
@@ -84,9 +86,12 @@ CmdType PktDef::GetCmd()
 {
     // Returns CmdType depending on Header information
     int flagSet = 0;
-    if (cmdPacket.header.Drive)  flagSet += 1;
-    else  if (cmdPacket.header.Sleep) flagSet += 2;
-    else if (cmdPacket.header.Status) flagSet += 4;
+    if (cmdPacket.header.Drive)
+        flagSet += 1;
+    else if (cmdPacket.header.Sleep)
+        flagSet += 2;
+    else if (cmdPacket.header.Status)
+        flagSet += 4;
 
     switch (flagSet)
     {
@@ -112,9 +117,10 @@ int PktDef::GetLength()
     return (int)cmdPacket.header.Length;
 }
 
-char* PktDef::GetBodyData()
+char *PktDef::GetBodyData()
 {
-    if (!cmdPacket.data) return nullptr;
+    if (!cmdPacket.data)
+        return nullptr;
     return cmdPacket.data;
 }
 
@@ -123,7 +129,8 @@ DriveBody PktDef::GetDriveBody()
     // Initilize with base data incase cmdPacket.data is null
     DriveBody driveBody = InitDriveBody();
 
-    if (cmdPacket.data) {
+    if (cmdPacket.data)
+    {
         driveBody.Direction = cmdPacket.data[0];
         driveBody.Duration = (unsigned char)cmdPacket.data[1];
         driveBody.Speed = cmdPacket.data[2];
@@ -132,13 +139,15 @@ DriveBody PktDef::GetDriveBody()
     return driveBody;
 }
 
-bool PktDef::CheckCRC(char* buffer, int size)
+bool PktDef::CheckCRC(char *buffer, int size)
 {
-    if (size < cmdPacket.header.Length) return false; // Buffer size doesn't match up
+    if (size < cmdPacket.header.Length)
+        return false; // Buffer size doesn't match up
 
     // Get count of all ones in buffer
     int count = 0;
-    for (int i = 0; i < size - 1; i++) {
+    for (int i = 0; i < size - 1; i++)
+    {
         count += countBinaryOnes(buffer[i]);
     }
 
@@ -167,17 +176,18 @@ void PktDef::CalcCRC()
     cmdPacket.crc = count;
 }
 
-char* PktDef::GenPacket()
+char *PktDef::GenPacket()
 {
     size_t totalSize = HEADERSIZE + CRCSIZE;
 
-    char* buffer = new char[totalSize];
+    char *buffer = new char[totalSize];
 
     // Copy Header information
     memcpy(buffer, &cmdPacket.header, HEADERSIZE);
 
     // If data is valid, copy body data
-    if (cmdPacket.data && cmdPacket.header.Length > 0) {
+    if (cmdPacket.data && cmdPacket.header.Length > 0)
+    {
         memcpy(buffer + HEADERSIZE, cmdPacket.data, cmdPacket.header.Length);
     }
 
@@ -208,8 +218,10 @@ int PktDef::countBinaryOnes(unsigned short int val)
     int count = 0;
 
     // Traverse unsigned short int (16 bits) and count amount of 1's
-    for (int i = 0; i < 16; i++) {
-        if (val % 2 == 1) {
+    for (int i = 0; i < 16; i++)
+    {
+        if (val % 2 == 1)
+        {
             count++;
         }
         val /= 2;
@@ -223,8 +235,10 @@ int PktDef::countBinaryOnes(unsigned char val)
     int count = 0;
 
     // Traverse unsigned char (8 bits) and count amount of 1's
-    for (int i = 0; i < 8; i++) {
-        if (val % 2 == 1) {
+    for (int i = 0; i < 8; i++)
+    {
+        if (val % 2 == 1)
+        {
             count++;
         }
         val /= 2;
@@ -239,8 +253,4 @@ int PktDef::countBinaryOnes(char val)
     unsigned char unsignedVal = static_cast<unsigned char>(val);
 
     return countBinaryOnes(unsignedVal);
-}
-
-int main() {
-    return 0;
 }

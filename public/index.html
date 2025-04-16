@@ -4,11 +4,24 @@
     <meta charset="utf-8">
     <title>Robot Controller</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        #responses {
+            width: 100%;
+            max-width: 600px;
+            height: 200px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 <body>
     <h1>Robot Controller</h1>
-    <form action="/connect" method="post">
+
+    <form id="connect" onsubmit="handleConnect(event)">
         <label for="ip">IP address:</label>
         <input type="text" name="ip" id="ip"><br>
         <label for="port">Port:</label>
@@ -16,14 +29,70 @@
         <button type="submit">Connect</button>
     </form>
 
-    <form action="/telecommand" method="put">
+    <form id="telecommand" onsubmit="handleTelecommand(event)">
         <label for="command">Command:</label>
-        <input type="text" name="command" id="command"><br>
+        <select name="command" id="command">
+            <option value="SLEEP">SLEEP</option>
+            <option value="DRIVE">DRIVE</option>
+        </select><br>
+    
+        <label for="direction">Direction:</label>
+        <select name="direction" id="direction">
+            <option value="1">FORWARD</option>
+            <option value="2">BACKWARD</option>
+            <option value="3">RIGHT</option>
+            <option value="4">LEFT</option>
+        </select><br>
+    
         <label for="duration">Duration:</label>
         <input type="number" name="duration" id="duration"><br>
+    
         <label for="speed">Speed:</label>
         <input type="number" name="speed" id="speed"><br>
+    
         <button type="submit">Send</button>
     </form>
+    
+    
+
+    <h3>Response Log:</h3>
+    <div id="responses"></div>
+
+    <script>
+        let responses = "";
+
+        function handleConnect(event) {
+            event.preventDefault();
+            fetch(`connect/${document.getElementById("ip").value}/${document.getElementById("port").value}`, {
+                method: "POST"
+            })
+            .then(response => response.text())
+            .then(data => {
+                appendResponse(data);
+            });
+        }
+
+        function handleTelecommand(event) {
+            event.preventDefault();
+            const direction = document.getElementById("direction").value;
+            const duration = document.getElementById("duration").value;
+            const speed = document.getElementById("speed").value;
+
+            fetch(`telecommand/${document.getElementById("command").value}?direction=${direction}&duration=${duration}&speed=${speed}`, {
+                method: "PUT"
+            })
+            .then(response => response.text())
+            .then(data => {
+                appendResponse(data);
+            });
+        }
+
+        function appendResponse(text) {
+            responses += text + "\n";
+            const responseDiv = document.getElementById("responses");
+            responseDiv.innerText = responses;
+            responseDiv.scrollTop = responseDiv.scrollHeight;
+        }
+    </script>
 </body>
 </html>
