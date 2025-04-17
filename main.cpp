@@ -136,6 +136,7 @@ int main()
             res.write(lengthRecieved);
             PktDef recvPkt(data);
         
+            // NACK
             if (!recvPkt.GetAck()) {
                 res.write("Failed to receive ack");
                 res.code = 400;
@@ -146,7 +147,9 @@ int main()
 
             res.write("Received ack");
 
+            // Clean up
             delete telepkt;
+            
             res.code = 200;
             res.end(); });
 
