@@ -28,6 +28,7 @@ enum class CmdType
 struct Header
 {
     unsigned short int PktCount;
+    // uint8_t flags; // 1 Drive, 1 Status, 1 Sleep, 1 Ack, 4 Padding
     char Drive : 1;
     char Status : 1;
     char Sleep : 1;

@@ -108,7 +108,8 @@ int main()
             int len = telepkt->GetLength();
             roboSocket->SendData(packet, len);
         
-            cout << "Sent " << cmd << " packet that was " << len << " bytes large" << endl;
+            string lengthSent = "Sent " + cmd + " packet that was " + std::to_string(len) + " bytes large";
+            res.write(lengthSent);
         
             char data[10];
             telepkt->SetLength(8);

@@ -5,6 +5,7 @@ PktDef::PktDef()
 {
     // Initilize base values
     memset(&cmdPacket.header, 0, HEADERSIZE);
+    cmdPacket.header.Length = HEADERSIZE + CRCSIZE; // Setting it to the default size
     cmdPacket.data = nullptr;
     cmdPacket.crc = 0;
     rawBuffer = nullptr;
@@ -12,10 +13,14 @@ PktDef::PktDef()
 
 PktDef::PktDef(char *src) : PktDef()
 {
+    assert(src != nullptr);
+
     // Copy header
     char *tmp = src;
     memcpy(&cmdPacket.header, tmp, HEADERSIZE);
     tmp += HEADERSIZE;
+
+    assert((int)cmdPacket.header.Length >= HEADERSIZE + CRCSIZE);
 
     // Copy body
     if ((int)cmdPacket.header.Length > (HEADERSIZE + CRCSIZE))
@@ -37,7 +42,8 @@ PktDef::PktDef(char *src) : PktDef()
 PktDef::~PktDef() {
     if (cmdPacket.data)
         delete[] cmdPacket.data;
-    delete[] rawBuffer;
+    if (rawBuffer)
+        delete[] rawBuffer;
 }
 
 
@@ -52,15 +58,15 @@ void PktDef::SetCmd(CmdType cmd)
     // Depending on command, set header
     switch (cmd)
     {
-    case DRIVE:
+    case CmdType::DRIVE:
         cmdPacket.header.Drive = 1;
         cmdPacket.header.Ack = 1;
         break;
-    case SLEEP:
+    case CmdType::SLEEP:
         cmdPacket.header.Sleep = 1;
         cmdPacket.header.Ack = 1;
         break;
-    case RESPONSE:
+    case CmdType::RESPONSE:
         cmdPacket.header.Status = 1;
         cmdPacket.header.Ack = 1;
         break;
@@ -71,6 +77,11 @@ void PktDef::SetCmd(CmdType cmd)
 
 void PktDef::SetBodyData(char *dataBuffer, int size)
 {
+    assert(dataBuffer != nullptr);
+    assert(size > 0);
+
+    if (cmdPacket.data)
+        delete[] cmdPacket.data;
     cmdPacket.data = new char[size];
     memcpy(cmdPacket.data, dataBuffer, size);
     cmdPacket.header.Length = HEADERSIZE + size + CRCSIZE;
@@ -132,7 +143,7 @@ DriveBody PktDef::GetDriveBody()
     // Initilize with base data incase cmdPacket.data is null
     DriveBody driveBody = InitDriveBody();
 
-    if (cmdPacket.data)
+    if (cmdPacket.data && (cmdPacket.header.Length - HEADERSIZE - CRCSIZE) == 3)
     {
         driveBody.Direction = cmdPacket.data[0];
         driveBody.Duration = (unsigned char)cmdPacket.data[1];
@@ -144,7 +155,10 @@ DriveBody PktDef::GetDriveBody()
 
 bool PktDef::CheckCRC(char *buffer, int size)
 {
-    if (size > cmdPacket.header.Length)
+
+    assert(buffer != nullptr);
+
+    if (size != cmdPacket.header.Length)
         return false; // Buffer size doesn't match up
 
     // Get count of all ones in buffer
@@ -171,11 +185,12 @@ void PktDef::CalcCRC()
     count += countBinaryOnes(cmdPacket.header.Length); // Count 1's in Header length
 
     // Body
-    DriveBody db = GetDriveBody();
-    count += countBinaryOnes(db.Direction);
-    count += countBinaryOnes(db.Duration);
-    count += countBinaryOnes(db.Speed);
-
+    if (cmdPacket.data)
+    {
+        count += countBinaryOnes(cmdPacket.data[0]);
+        count += countBinaryOnes(cmdPacket.data[1]);
+        count += countBinaryOnes(cmdPacket.data[2]);
+    }
     cmdPacket.crc = (unsigned char)count;
 }
 
@@ -196,7 +211,7 @@ char *PktDef::GenPacket()
 
     // Copy CRC to end of packet
     memcpy(buffer + (totalSize - CRCSIZE), &cmdPacket.crc, CRCSIZE);
-
+    rawBuffer = buffer;
     return buffer;
 }
 
