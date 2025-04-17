@@ -91,7 +91,7 @@ int main()
 
     CROW_ROUTE(app, "/telecommand/<string>")
         .methods(HTTPMethod::PUT)([&roboSocket](const request &req, response &res, string cmd)
-                                  {
+        {
             PktDef* telepkt = new PktDef();
 
             if (cmd == "SLEEP") {
@@ -101,13 +101,15 @@ int main()
                 const char* dur = req.url_params.get("duration");
                 const char* spd = req.url_params.get("speed");
         
+                // If we don't have all the parameters then we can't send the packet
                 if (!(dir && dur && spd)) {
                     res.code = 400;
                     res.write("Missing parameters");
                     res.end();
                     return;
                 }
-        
+                
+                // Make sure everything is a number and then convert it to a char
                 char bodyData[3] = {
                     static_cast<char>(std::stoi(dir)),
                     static_cast<char>(std::stoi(dur)),
@@ -142,21 +144,21 @@ int main()
 
             res.write("Received ack");
 
-        
             delete telepkt;
             res.code = 200;
             res.end(); });
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
-     {
+    {
+        // Requesting the telemetry
         PktDef sendPkt;
         sendPkt.SetCmd(CmdType::RESPONSE);
         sendPkt.CalcCRC();
         char* sendPacket = sendPkt.GenPacket();
-
         roboSocket->SendData(sendPacket, sendPkt.GetLength());
 
+        // Getting the Ack packet and making sure it has Acked
         char bufferOne[16];
         int firstBytesReceived = roboSocket->GetData(bufferOne);
         PktDef recvPktOne(bufferOne);
@@ -166,15 +168,15 @@ int main()
             return;
         }
 
+        // Getting the Telemetry packet and making sure it has telemed
         char bufferTwo[16];
         int secondBytesReceived = roboSocket->GetData(bufferTwo);
-
         PktDef recvPktTwo(bufferTwo);
         char* recvBody = recvPktTwo.GetBodyData();
-
         TelemetryResponse response;
         std::memcpy(&response, recvBody, sizeof(TelemetryResponse));
         
+        // Writing out the response to the page
         res.write("lastPacketCounter: " + to_string(response.lastPacketCounter));
         res.write("\ncurrentGrade: " + to_string(response.currentGrade));
         res.write("\nhitCount: " + to_string(response.hitCount));
