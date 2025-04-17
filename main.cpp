@@ -52,20 +52,25 @@ int main()
     string roboIp = "0.0.0.0";
     int roboPort = 0;
     MySocket *roboSocket = nullptr;
+    ConnectionType connectType = UDP;
 
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-    { sendHtml(res, "./public/index"); });
+     { sendHtml(res, "./public/index"); });
 
-    CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket](const request &req, response &res, string ip, int port)
-                                                                         {
+    CROW_ROUTE(app, "/connect/<string>/<int>/<string>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket, &connectType](const request &req, response &res, string ip, int port, string type)
+                                                                                  {
         roboIp = ip;
         roboPort = port;
+        if (type == "TCP") connectType = TCP;
+        else connectType = UDP;
 
         if (roboSocket) delete roboSocket;
-        roboSocket = new MySocket(CLIENT, roboIp, (unsigned int)roboPort, UDP, (unsigned int)0); 
+        roboSocket = new MySocket(CLIENT, roboIp, (unsigned int)roboPort, connectType, (unsigned int)0); 
         if (roboSocket) {
+            if (connectType == TCP) roboSocket->ConnectTCP();
+
             res.code = 200;
             res.write("Bound Socket");
         } else {
@@ -134,7 +139,7 @@ int main()
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
-    {
+     {
         PktDef sendPkt;
         sendPkt.SetCmd(CmdType::RESPONSE);
         sendPkt.CalcCRC();

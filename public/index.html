@@ -26,6 +26,11 @@
         <input type="text" name="ip" id="ip"><br>
         <label for="port">Port:</label>
         <input type="number" name="port" id="port"><br>
+        <label for="connectionType">Connection Type:</label>
+        <select name="connectionType" id="connectionType">
+            <option value="UDP">UDP</option>
+            <option value="TCP">TCP</option>
+        </select>
         <button type="submit">Connect</button>
     </form>
 
@@ -63,7 +68,7 @@
 
         function handleConnect(event) {
             event.preventDefault();
-            fetch(`connect/${document.getElementById("ip").value}/${document.getElementById("port").value}`, {
+            fetch(`connect/${document.getElementById("ip").value}/${document.getElementById("port").value}/${document.getElementById("connectionType").value}`, {
                 method: "POST"
             })
             .then(response => response.text())
