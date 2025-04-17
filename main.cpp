@@ -56,7 +56,7 @@ int main()
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-     { sendHtml(res, "./public/index"); });
+    { sendHtml(res, "./public/index"); });
 
     CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket](const request &req, response &res, string ip, int port)
                                                                          {
@@ -113,15 +113,28 @@ int main()
         
             char data[10];
             int length = roboSocket->GetData(data);
-            cout << "Got " << length << " bytes: " << string(data, length) << endl;
+            string lengthRecieved = "Got " + to_string(length) + " bytes back";
+            res.write(lengthRecieved);
+            PktDef recvPkt(data);
         
-            delete[] telepkt;
+            if (!recvPkt.GetAck()) {
+                res.write("Failed to receive ack");
+                res.code = 400;
+                delete telepkt;
+                res.end();
+                return;
+            }
+
+            res.write("Received ack");
+
+        
+            delete telepkt;
             res.code = 200;
             res.end(); });
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
-     {
+    {
         PktDef sendPkt;
         sendPkt.SetCmd(CmdType::RESPONSE);
         sendPkt.CalcCRC();
@@ -129,19 +142,38 @@ int main()
 
         roboSocket->SendData(sendPacket, sendPkt.GetLength());
 
-        char buffer[16];
-        int bytesReceived = roboSocket->GetData(buffer);
+        char bufferOne[16];
+        int firstBytesReceived = roboSocket->GetData(bufferOne);
+        PktDef recvPktOne(bufferOne);
+        if (!recvPktOne.GetAck()) {
+            res.code =400;
+            res.end();
+            return;
+        }
 
-        PktDef recvPkt(buffer);
-        char* recvBody = recvPkt.GetBodyData();
+        char bufferTwo[16];
+        int secondBytesReceived = roboSocket->GetData(bufferTwo);
 
+        PktDef recvPktTwo(bufferTwo);
+        char* recvBody = recvPktTwo.GetBodyData();
+
+        
         unsigned short int lastPacketCounter = recvBody[0];
         unsigned short int currentGrade = recvBody[4];
-        unsigned short int hitCount = recvBody[8];
+        unsigned short int hitCount = recvBody[14];
         unsigned char lastCmd = recvBody[12];
         unsigned char lastCmdValue = recvBody[13];
-        unsigned char lastCmdSpeed = recvBody[14];
+        unsigned char lastCmdSpeed = recvBody[8];
     
+        json::wvalue results;
+        results["lastPacketCounter"] = lastPacketCounter;
+        results["currentGrade"] = currentGrade;
+        results["hitCount"] = hitCount;
+        results["lastCmd"] = lastCmd;
+        results["lastCmdValue"] = lastCmdValue;
+        results["lastCmdSpeed"] = lastCmdSpeed;
+        res.write(results.dump());
+
         res.code = 200;
         res.end(); });
 
