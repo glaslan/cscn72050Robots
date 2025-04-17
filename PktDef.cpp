@@ -184,6 +184,7 @@ void PktDef::CalcCRC()
     count += countBinaryOnes((unsigned char)(pktCount & 0xFF));
     count += countBinaryOnes((unsigned char)((pktCount >> 8) & 0xFF));
 
+    // Stick the flags into one byte to be counted
     unsigned char flags = 0;
     flags |= (cmdPacket.header.Drive & 0x01) << 7;
     flags |= (cmdPacket.header.Status & 0x01) << 6;
