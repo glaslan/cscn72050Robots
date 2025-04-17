@@ -16,7 +16,7 @@
             font-family: monospace;
             white-space: pre-wrap;
         }
-    </style>
+    </style>    
 </head>
 <body>
     <h1>Robot Controller</h1>
@@ -65,49 +65,97 @@
 
     <script>
         let responses = "";
-
+        let isRequesting = false;
+    
         function handleConnect(event) {
+            if (isRequesting) return;
+            isRequesting = true;
+    
             event.preventDefault();
+            const connectButton = document.getElementById("connectButton");
+    
             fetch(`connect/${document.getElementById("ip").value}/${document.getElementById("port").value}/${document.getElementById("connectionType").value}`, {
                 method: "POST"
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to connect');
+                }
+                return response.text();
+            })
             .then(data => {
                 appendResponse(data);
+            })
+            .catch(error => {
+                appendResponse("Error: " + error.message);
+            })
+            .finally(() => {
+                isRequesting = false;
             });
         }
-
+    
         function handleTelecommand(event) {
+            if (isRequesting) return;
+            isRequesting = true;
+    
             event.preventDefault();
             const direction = document.getElementById("direction").value;
             const duration = document.getElementById("duration").value;
             const speed = document.getElementById("speed").value;
-
-            fetch(`telecommand/${document.getElementById("command").value}?direction=${direction}&duration=${duration}&speed=${speed}`, {
+    
+            fetch(`telecommand/${document.getElementById("command").value}?direction=${encodeURIComponent(direction)}&duration=${encodeURIComponent(duration)}&speed=${encodeURIComponent(speed)}`, {
                 method: "PUT"
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to send telecommand');
+                }
+                return response.text();
+            })
             .then(data => {
                 appendResponse(data);
+            })
+            .catch(error => {
+                appendResponse("Error: " + error.message);
+            })
+            .finally(() => {
+                isRequesting = false;
             });
         }
-
+    
         function updateTelementry(event) {
+            if (isRequesting) return;
+            isRequesting = true;
+    
             event.preventDefault();
             fetch(`/telementry_request`, {
                 method: "GET"
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to get telemetry data');
+                }
+                return response.text();
+            })
             .then(data => {
                 appendResponse(data);
+            })
+            .catch(error => {
+                appendResponse("Error: " + error.message);
+            })
+            .finally(() => {
+                isRequesting = false;
             });
         }
+    
         function appendResponse(text) {
-            responses += text + "\n";
             const responseDiv = document.getElementById("responses");
-            responseDiv.innerText = responses;
+            const newResponse = document.createElement('div');
+            newResponse.innerText = text;
+            responseDiv.appendChild(newResponse);
             responseDiv.scrollTop = responseDiv.scrollHeight;
         }
     </script>
+    
 </body>
 </html>

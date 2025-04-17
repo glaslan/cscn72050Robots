@@ -9,6 +9,16 @@ using namespace std;
 using namespace crow;
 using namespace TermProject;
 
+struct TelemetryResponse
+{
+    unsigned short int lastPacketCounter;
+    unsigned short int currentGrade;
+    unsigned short int hitCount;
+    unsigned char lastCmd;
+    unsigned char lastCmdValue;
+    unsigned char lastCmdSpeed;
+};
+
 void sendFile(response &res, string filename, string contentType)
 {
     ifstream in("../" + filename, ifstream::in);
@@ -151,7 +161,7 @@ int main()
         int firstBytesReceived = roboSocket->GetData(bufferOne);
         PktDef recvPktOne(bufferOne);
         if (!recvPktOne.GetAck()) {
-            res.code =400;
+            res.code = 400;
             res.end();
             return;
         }
@@ -162,23 +172,16 @@ int main()
         PktDef recvPktTwo(bufferTwo);
         char* recvBody = recvPktTwo.GetBodyData();
 
+        TelemetryResponse response;
+        std::memcpy(&response, recvBody, sizeof(TelemetryResponse));
         
-        unsigned short int lastPacketCounter = recvBody[0];
-        unsigned short int currentGrade = recvBody[4];
-        unsigned short int hitCount = recvBody[14];
-        unsigned char lastCmd = recvBody[12];
-        unsigned char lastCmdValue = recvBody[13];
-        unsigned char lastCmdSpeed = recvBody[8];
-    
-        json::wvalue results;
-        results["lastPacketCounter"] = lastPacketCounter;
-        results["currentGrade"] = currentGrade;
-        results["hitCount"] = hitCount;
-        results["lastCmd"] = lastCmd;
-        results["lastCmdValue"] = lastCmdValue;
-        results["lastCmdSpeed"] = lastCmdSpeed;
-        res.write(results.dump());
-
+        res.write("lastPacketCounter: " + to_string(response.lastPacketCounter));
+        res.write("\ncurrentGrade: " + to_string(response.currentGrade));
+        res.write("\nhitCount: " + to_string(response.hitCount));
+        res.write("\nlastCmd: " + to_string(response.lastCmd));
+        res.write("\nlastCmdValue: " + to_string(response.lastCmdValue));
+        res.write("\nlastCmdSpeed: " + to_string(response.lastCmdSpeed));
+        
         res.code = 200;
         res.end(); });
 
