@@ -56,13 +56,14 @@ int main()
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-    { sendHtml(res, "./public/index"); });
+     { sendHtml(res, "./public/index"); });
 
     CROW_ROUTE(app, "/connect/<string>/<int>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket](const request &req, response &res, string ip, int port)
-        {
+                                                                         {
         roboIp = ip;
         roboPort = port;
 
+        if (roboSocket) delete roboSocket;
         roboSocket = new MySocket(CLIENT, roboIp, (unsigned int)roboPort, UDP, (unsigned int)0); 
         if (roboSocket) {
             res.code = 200;
@@ -71,12 +72,11 @@ int main()
             res.code = 500;
             res.write("Failed to Bind Socket");
         }
-        res.end();
-    });
+        res.end(); });
 
     CROW_ROUTE(app, "/telecommand/<string>")
         .methods(HTTPMethod::PUT)([&roboSocket](const request &req, response &res, string cmd)
-        {
+                                  {
             PktDef* telepkt = new PktDef();
 
             if (cmd == "SLEEP") {
@@ -112,17 +112,16 @@ int main()
             res.write(lengthSent);
         
             char data[10];
-            telepkt->SetLength(8);
             int length = roboSocket->GetData(data);
             cout << "Got " << length << " bytes: " << string(data, length) << endl;
         
-            delete telepkt;
-            res.end();
-            });
+            delete[] telepkt;
+            res.code = 200;
+            res.end(); });
 
     CROW_ROUTE(app, "/telementry_request")
     ([&roboSocket](const request &req, response &res)
-    {
+     {
         PktDef sendPkt;
         sendPkt.SetCmd(CmdType::RESPONSE);
         sendPkt.CalcCRC();

@@ -39,13 +39,13 @@ PktDef::PktDef(char *src) : PktDef()
     memcpy(&cmdPacket.crc, tmp, CRCSIZE);
 }
 
-PktDef::~PktDef() {
+PktDef::~PktDef()
+{
     if (cmdPacket.data)
         delete[] cmdPacket.data;
     if (rawBuffer)
         delete[] rawBuffer;
 }
-
 
 void PktDef::SetCmd(CmdType cmd)
 {
@@ -134,7 +134,8 @@ char *PktDef::GetBodyData()
     return cmdPacket.data;
 }
 
-void PktDef::SetLength(int length) {
+void PktDef::SetLength(int length)
+{
     cmdPacket.header.Length = (unsigned char)length;
 }
 
@@ -179,18 +180,30 @@ void PktDef::CalcCRC()
     int count = 0; // The amount of 1's found in the packet
 
     // Header
-    count += countBinaryOnes(cmdPacket.header.PktCount); // Count 1's in PktCount
-    count += cmdPacket.header.Drive + cmdPacket.header.Status + cmdPacket.header.Sleep;
-    count += cmdPacket.header.Ack;
-    count += countBinaryOnes(cmdPacket.header.Length); // Count 1's in Header length
+    unsigned short pktCount = cmdPacket.header.PktCount;
+    count += countBinaryOnes((unsigned char)(pktCount & 0xFF));
+    count += countBinaryOnes((unsigned char)((pktCount >> 8) & 0xFF));
+
+    unsigned char flags = 0;
+    flags |= (cmdPacket.header.Drive & 0x01) << 7;
+    flags |= (cmdPacket.header.Status & 0x01) << 6;
+    flags |= (cmdPacket.header.Sleep & 0x01) << 5;
+    flags |= (cmdPacket.header.Ack & 0x01) << 4;
+
+    count += countBinaryOnes(flags);
+    count += countBinaryOnes(cmdPacket.header.Length);
 
     // Body
     if (cmdPacket.data)
     {
-        count += countBinaryOnes(cmdPacket.data[0]);
-        count += countBinaryOnes(cmdPacket.data[1]);
-        count += countBinaryOnes(cmdPacket.data[2]);
+        int bodySize = cmdPacket.header.Length - HEADERSIZE - CRCSIZE;
+        for (int i = 0; i < bodySize; i++)
+        {
+            count += countBinaryOnes(cmdPacket.data[i]);
+        }
     }
+
+    // CRC
     cmdPacket.crc = (unsigned char)count;
 }
 
