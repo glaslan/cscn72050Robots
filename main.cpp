@@ -67,10 +67,10 @@ int main()
     // Home Page
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res)
-     { sendHtml(res, "./public/index"); });
+    { sendHtml(res, "./public/index"); });
 
     CROW_ROUTE(app, "/connect/<string>/<int>/<string>").methods(HTTPMethod::POST)([&roboIp, &roboPort, &roboSocket, &connectType](const request &req, response &res, string ip, int port, string type)
-                                                                                  {
+        {
         roboIp = ip;
         roboPort = port;
         if (type == "TCP") connectType = TCP;
@@ -120,6 +120,7 @@ int main()
                 telepkt->SetBodyData(bodyData, 3);
             }
         
+            // Send the packet
             telepkt->CalcCRC();
             char* packet = telepkt->GenPacket();
             int len = telepkt->GetLength();
@@ -128,6 +129,7 @@ int main()
             string lengthSent = "Sent " + cmd + " packet that was " + std::to_string(len) + " bytes large";
             res.write(lengthSent);
         
+            // Get the response
             char data[10];
             int length = roboSocket->GetData(data);
             string lengthRecieved = "Got " + to_string(length) + " bytes back";
